@@ -1,0 +1,155 @@
+@model WebstrarPortal.Models.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    var hasSession = !string.IsNullOrWhiteSpace(Model.Asurite);
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @Model.SuccessMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (!hasSession)
+{
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="card-title mb-3">Webstrar Portal</h3>
+                    <p class="text-muted">Enter your ASURITE to manage your site pages.</p>
+                    <form method="get" action="/portal">
+                        <div class="mb-3">
+                            <input type="text" name="asurite" class="form-control form-control-lg text-center"
+                                   placeholder="ASURITE (e.g. jdoe12)" required autofocus />
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg w-100">Go to Dashboard</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Webstrar Dashboard</h2>
+            <p class="text-muted mb-0">
+                ASURITE: <strong>@Model.Asurite</strong> &mdash; Site <strong>@Model.SiteNumber</strong>
+                &nbsp; <a href="/portal" class="btn btn-outline-secondary btn-sm">Switch User</a>
+            </p>
+        </div>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
+        @foreach (var slot in Model.Pages)
+        {
+            var borderClass = slot.HasContent ? "border-success" : "border-secondary";
+            var badgeClass = slot.HasContent ? "bg-success" : "bg-secondary";
+            var statusText = slot.HasContent ? $"{slot.FileCount} file(s)" : "Empty";
+            var dropId = $"drop-{slot.Index}";
+            var fileId = $"file-{slot.Index}";
+            var formId = $"form-{slot.Index}";
+
+            <div class="col">
+                <div class="card h-100 @borderClass">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <strong>@slot.Name</strong>
+                        <span class="badge @badgeClass">@statusText</span>
+                    </div>
+                    <div class="card-body">
+                        @if (slot.HasContent && slot.LastModified.HasValue)
+                        {
+                            <p class="card-text text-muted small mb-3">
+                                Last updated: @slot.LastModified.Value.ToString("yyyy-MM-dd HH:mm UTC")
+                            </p>
+                        }
+                        else
+                        {
+                            <p class="card-text text-muted small mb-3">No content uploaded yet.</p>
+                        }
+
+                        <form id="@formId" asp-controller="Deploy" asp-action="Upload"
+                              asp-route-page="@slot.Name"
+                              method="post" enctype="multipart/form-data">
+                            <input type="hidden" name="asurite" value="@Model.Asurite" />
+
+                            <div id="@dropId" class="drop-zone mb-2" onclick="document.getElementById('@fileId').click()">
+                                <span class="drop-zone-text">Drag & drop <strong>@(slot.Name).zip</strong> here or click to browse</span>
+                                <input type="file" id="@fileId" name="file" class="d-none" accept=".zip"
+                                       onchange="handleFileSelect(this, '@dropId', '@formId')" />
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-sm w-100">
+                                @(slot.HasContent ? "Replace" : "Upload") ZIP
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <strong>Alternative: Upload via curl (Command Prompt / Terminal)</strong>
+        </div>
+        <div class="card-body">
+            <p class="text-muted small">You can also deploy from the command line. Replace <code>PageX</code> with the target page (Page0&ndash;Page10) and provide the path to your ZIP file.</p>
+            <pre class="bg-dark text-light p-3 rounded"><code>curl -X POST "@(Model.ServiceBaseUrl)/portal/deploy/upload?page=Page0" ^
+     -F "asurite=@Model.Asurite" ^
+     -F "file=@@C:\path\to\your\Page0.zip"</code></pre>
+            <p class="text-muted small mb-0">On macOS/Linux, replace <code>^</code> with <code>\</code> for line continuation.</p>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function handleFileSelect(input, dropId, formId) {
+            var dropZone = document.getElementById(dropId);
+            var textEl = dropZone.querySelector('.drop-zone-text');
+            if (input.files.length > 0) {
+                textEl.innerHTML = '<strong>' + input.files[0].name + '</strong> selected';
+                dropZone.classList.add('drop-zone-active');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.drop-zone').forEach(function (zone) {
+                var input = zone.querySelector('input[type="file"]');
+
+                zone.addEventListener('dragover', function (e) {
+                    e.preventDefault();
+                    zone.classList.add('drop-zone-hover');
+                });
+
+                zone.addEventListener('dragleave', function () {
+                    zone.classList.remove('drop-zone-hover');
+                });
+
+                zone.addEventListener('drop', function (e) {
+                    e.preventDefault();
+                    zone.classList.remove('drop-zone-hover');
+                    if (e.dataTransfer.files.length > 0) {
+                        input.files = e.dataTransfer.files;
+                        var textEl = zone.querySelector('.drop-zone-text');
+                        textEl.innerHTML = '<strong>' + e.dataTransfer.files[0].name + '</strong> selected';
+                        zone.classList.add('drop-zone-active');
+                    }
+                });
+            });
+        });
+    </script>
+}

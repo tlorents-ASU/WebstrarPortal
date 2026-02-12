@@ -1,0 +1,20 @@
+@{
+    ViewData["Title"] = "Access Denied";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-body text-center">
+                <h3 class="card-title text-danger">Access Denied</h3>
+                <p class="card-text mt-3">
+                    Your ASURITE (<strong>@User.Identity?.Name</strong>) does not have a site assignment in Webstrar.
+                </p>
+                <p class="text-muted">
+                    If you believe this is an error, please contact your instructor.
+                </p>
+                <a href="/" class="btn btn-outline-secondary mt-2">Back to Home</a>
+            </div>
+        </div>
+    </div>
+</div>

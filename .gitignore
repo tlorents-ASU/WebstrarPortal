@@ -1,0 +1,23 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.csproj.user
+
+# Build output
+**/bin/
+**/obj/
+
+# Publish output
+publish/
+
+# Logs
+logs/
+*.log
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# ZIP uploads
+*.zip
