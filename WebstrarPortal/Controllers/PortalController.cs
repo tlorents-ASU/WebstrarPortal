@@ -10,18 +10,20 @@ public class PortalController : Controller
     private readonly DynamoDbService _ddb;
     private readonly PageStatusService _pageStatus;
     private readonly IConfiguration _config;
+    private readonly HashSet<int> _instructorSites;
 
     public PortalController(DynamoDbService ddb, PageStatusService pageStatus, IConfiguration config)
     {
         _ddb = ddb;
         _pageStatus = pageStatus;
         _config = config;
+        _instructorSites = config.GetSection("InstructorSites")
+            .Get<int[]>()?.ToHashSet() ?? new HashSet<int> { 1, 99, 100 };
     }
 
     [HttpGet("")]
     public async Task<IActionResult> Index([FromQuery] string? asurite)
     {
-        // If no ASURITE provided, show the login/entry form
         if (string.IsNullOrWhiteSpace(asurite))
         {
             return View("Index", new DashboardViewModel
@@ -40,6 +42,12 @@ public class PortalController : Controller
             {
                 ErrorMessage = $"No site assignment found for ASURITE \"{asurite}\". Contact your instructor."
             });
+        }
+
+        // Instructor sites get redirected to instructor dashboard
+        if (_instructorSites.Contains(site.Value))
+        {
+            return RedirectToAction("Index", "Instructor", new { asurite });
         }
 
         var serviceBase = _config["CAS:ServiceBaseUrl"]?.TrimEnd('/') ?? Request.Scheme + "://" + Request.Host;

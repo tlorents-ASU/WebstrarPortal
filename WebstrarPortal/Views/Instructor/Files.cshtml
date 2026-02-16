@@ -1,0 +1,92 @@
+@model WebstrarPortal.Models.FileBrowserViewModel
+@{
+    ViewData["Title"] = $"Files - website{Model.SiteNumber}/{Model.PageName}";
+    var asurite = ViewBag.Asurite as string;
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/instructor?asurite=@asurite">All Sites</a></li>
+        <li class="breadcrumb-item"><a href="/instructor/site/@(Model.SiteNumber)?asurite=@asurite">website@(Model.SiteNumber)</a></li>
+        <li class="breadcrumb-item active">@Model.PageName</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>website@(Model.SiteNumber) / @Model.PageName</h2>
+        <p class="text-muted mb-0">
+            Team:
+            @foreach (var a in Model.Asurites)
+            {
+                <span class="badge bg-secondary me-1">@a</span>
+            }
+        </p>
+    </div>
+    <a href="@Model.SiteBaseUrl/" target="_blank" class="btn btn-outline-success btn-sm">View Live Page</a>
+</div>
+
+@if (Model.Files.Count == 0)
+{
+    <div class="alert alert-warning">No files found in this page folder.</div>
+}
+else
+{
+    <div class="card">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Name</th>
+                        <th class="text-end" style="width: 100px;">Size</th>
+                        <th style="width: 180px;">Modified</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ RenderTree(Model.Files, 0); }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@functions {
+    void RenderTree(List<WebstrarPortal.Models.FileNode> nodes, int depth)
+    {
+        var asurite = ViewBag.Asurite as string;
+        foreach (var node in nodes)
+        {
+            var indent = depth * 20;
+            if (node.IsDirectory)
+            {
+                <tr class="table-light">
+                    <td style="padding-left: @(indent + 12)px;">
+                        <strong>&#128193; @node.Name/</strong>
+                    </td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                RenderTree(node.Children, depth + 1);
+            }
+            else
+            {
+                var viewUrl = $"/instructor/site/{Model.SiteNumber}/page/{Model.PageName}/view?path={Uri.EscapeDataString(node.RelativePath)}&asurite={asurite}";
+                var sizeStr = FormatSize(node.Size);
+                <tr>
+                    <td style="padding-left: @(indent + 12)px;">
+                        <a href="@viewUrl">&#128196; @node.Name</a>
+                    </td>
+                    <td class="text-end text-muted small">@sizeStr</td>
+                    <td class="text-muted small">@node.LastModified.ToString("yyyy-MM-dd HH:mm")</td>
+                </tr>
+            }
+        }
+    }
+
+    string FormatSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        return $"{bytes / (1024.0 * 1024.0):F1} MB";
+    }
+}

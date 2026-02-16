@@ -1,0 +1,80 @@
+@model WebstrarPortal.Models.SiteOverview
+@{
+    ViewData["Title"] = $"Site {Model.SiteNumber}";
+    var asurite = ViewBag.Asurite as string;
+    var serviceBase = ViewBag.ServiceBaseUrl as string;
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/instructor?asurite=@asurite">All Sites</a></li>
+        <li class="breadcrumb-item active">website@(Model.SiteNumber)</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>website@(Model.SiteNumber)</h2>
+        <p class="text-muted mb-0">
+            Team:
+            @foreach (var a in Model.Asurites)
+            {
+                <span class="badge bg-secondary me-1">@a</span>
+            }
+        </p>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    @foreach (var slot in Model.Pages)
+    {
+        var borderClass = slot.HasContent ? (slot.HasDefaultAspx ? "border-success" : "border-warning") : "border-secondary";
+        var badgeClass = slot.HasContent ? "bg-success" : "bg-secondary";
+        var statusText = slot.HasContent ? $"{slot.FileCount} file(s)" : "Empty";
+
+        <div class="col">
+            <div class="card h-100 @borderClass">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <strong>@slot.Name</strong>
+                    <span class="badge @badgeClass">@statusText</span>
+                </div>
+                <div class="card-body">
+                    @if (slot.HasContent)
+                    {
+                        <p class="card-text small mb-1">
+                            @if (slot.HasDefaultAspx)
+                            {
+                                <span class="text-success fw-bold">&#10003; Default.aspx found</span>
+                            }
+                            else
+                            {
+                                <span class="text-warning fw-bold">&#10007; Default.aspx missing</span>
+                            }
+                        </p>
+                        @if (slot.LastModified.HasValue)
+                        {
+                            <p class="card-text text-muted small mb-3">
+                                Uploaded: @slot.LastModified.Value.ToString("yyyy-MM-dd HH:mm UTC")
+                            </p>
+                        }
+
+                        <div class="d-grid gap-2">
+                            <a href="@(serviceBase)/sites/website@(Model.SiteNumber)/@(slot.Name)/"
+                               target="_blank" class="btn btn-outline-success btn-sm">
+                                View Live Page
+                            </a>
+                            <a href="/instructor/site/@(Model.SiteNumber)/page/@(slot.Name)/files?asurite=@asurite"
+                               class="btn btn-outline-primary btn-sm">
+                                Browse Files
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="card-text text-muted small">No content uploaded.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>

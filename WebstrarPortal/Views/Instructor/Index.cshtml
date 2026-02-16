@@ -1,0 +1,91 @@
+@model WebstrarPortal.Models.InstructorDashboardViewModel
+@{
+    ViewData["Title"] = "Instructor Dashboard";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>Instructor Dashboard</h2>
+        <p class="text-muted mb-0">
+            Signed in as <strong>@Model.Asurite</strong> (Site @Model.SiteNumber)
+            &nbsp; <a href="/portal" class="btn btn-outline-secondary btn-sm">Switch User</a>
+        </p>
+    </div>
+    <span class="badge bg-info fs-6">@Model.Sites.Count student site(s)</span>
+</div>
+
+@if (Model.Sites.Count == 0)
+{
+    <div class="alert alert-warning">No student sites found in the system.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Site</th>
+                    <th>ASURITE(s)</th>
+                    <th class="text-center">Pages with Content</th>
+                    <th class="text-center">Total Files</th>
+                    <th class="text-center">Default.aspx</th>
+                    <th>Last Activity</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var site in Model.Sites)
+                {
+                    var pagesWithContent = site.Pages.Count(p => p.HasContent);
+                    var pagesWithDefault = site.Pages.Count(p => p.HasDefaultAspx);
+                    var hasActivity = site.TotalFiles > 0;
+                    var rowClass = hasActivity ? "" : "table-light text-muted";
+
+                    <tr class="@rowClass">
+                        <td><strong>website@(site.SiteNumber)</strong></td>
+                        <td>
+                            @foreach (var a in site.Asurites)
+                            {
+                                <span class="badge bg-secondary me-1">@a</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <span class="badge @(pagesWithContent > 0 ? "bg-success" : "bg-secondary")">
+                                @pagesWithContent / 11
+                            </span>
+                        </td>
+                        <td class="text-center">@site.TotalFiles</td>
+                        <td class="text-center">
+                            @if (pagesWithContent > 0)
+                            {
+                                var color = pagesWithDefault == pagesWithContent ? "text-success" : "text-warning";
+                                <span class="@color fw-bold">@pagesWithDefault / @pagesWithContent</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">&mdash;</span>
+                            }
+                        </td>
+                        <td>
+                            @if (site.LastActivity.HasValue && site.LastActivity.Value != default)
+                            {
+                                @site.LastActivity.Value.ToString("yyyy-MM-dd HH:mm UTC")
+                            }
+                            else
+                            {
+                                <span class="text-muted">No uploads</span>
+                            }
+                        </td>
+                        <td>
+                            @if (hasActivity)
+                            {
+                                <a href="/instructor/site/@(site.SiteNumber)?asurite=@Model.Asurite"
+                                   class="btn btn-outline-primary btn-sm">View Site</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

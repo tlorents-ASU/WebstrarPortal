@@ -7,4 +7,5 @@ public class PageSlot
     public bool HasContent { get; set; }
     public int FileCount { get; set; }
     public DateTime? LastModified { get; set; }
+    public bool HasDefaultAspx { get; set; }
 }
