@@ -11,6 +11,7 @@ public class PortalController : Controller
     private readonly PageStatusService _pageStatus;
     private readonly IConfiguration _config;
     private readonly HashSet<int> _instructorSites;
+    private readonly HashSet<string> _taAsurites;
 
     public PortalController(DynamoDbService ddb, PageStatusService pageStatus, IConfiguration config)
     {
@@ -19,6 +20,9 @@ public class PortalController : Controller
         _config = config;
         _instructorSites = config.GetSection("InstructorSites")
             .Get<int[]>()?.ToHashSet() ?? new HashSet<int> { 1, 99, 100 };
+        _taAsurites = config.GetSection("TaAsurites")
+            .Get<string[]>()?.Select(a => a.ToLowerInvariant()).ToHashSet()
+            ?? new HashSet<string>();
     }
 
     [HttpGet("")]
@@ -34,6 +38,13 @@ public class PortalController : Controller
         }
 
         asurite = asurite.Trim().ToLowerInvariant();
+
+        // TAs go straight to instructor dashboard (no DynamoDB entry needed)
+        if (_taAsurites.Contains(asurite))
+        {
+            return RedirectToAction("Index", "Instructor", new { asurite });
+        }
+
         var site = await _ddb.GetSiteForAsuriteAsync(asurite);
 
         if (site == null)

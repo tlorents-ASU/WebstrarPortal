@@ -11,6 +11,7 @@ public class InstructorController : Controller
     private readonly PageStatusService _pageStatus;
     private readonly IConfiguration _config;
     private readonly HashSet<int> _instructorSites;
+    private readonly HashSet<string> _taAsurites;
 
     public InstructorController(DynamoDbService ddb, PageStatusService pageStatus, IConfiguration config)
     {
@@ -19,6 +20,9 @@ public class InstructorController : Controller
         _config = config;
         _instructorSites = config.GetSection("InstructorSites")
             .Get<int[]>()?.ToHashSet() ?? new HashSet<int> { 1, 99, 100 };
+        _taAsurites = config.GetSection("TaAsurites")
+            .Get<string[]>()?.Select(a => a.ToLowerInvariant()).ToHashSet()
+            ?? new HashSet<string>();
     }
 
     [HttpGet("")]
@@ -28,9 +32,14 @@ public class InstructorController : Controller
             return RedirectToAction("Index", "Portal");
 
         asurite = asurite.Trim().ToLowerInvariant();
-        var site = await _ddb.GetSiteForAsuriteAsync(asurite);
-        if (site == null || !_instructorSites.Contains(site.Value))
-            return RedirectToAction("Index", "Portal");
+        var isTA = _taAsurites.Contains(asurite);
+
+        if (!isTA)
+        {
+            var site = await _ddb.GetSiteForAsuriteAsync(asurite);
+            if (site == null || !_instructorSites.Contains(site.Value))
+                return RedirectToAction("Index", "Portal");
+        }
 
         var allAssignments = await _ddb.GetAllSiteAssignmentsAsync();
         var serviceBase = _config["CAS:ServiceBaseUrl"]?.TrimEnd('/') ?? Request.Scheme + "://" + Request.Host;
@@ -53,7 +62,7 @@ public class InstructorController : Controller
         var model = new InstructorDashboardViewModel
         {
             Asurite = asurite,
-            SiteNumber = site.Value,
+            SiteNumber = 0,
             Sites = sites,
             ServiceBaseUrl = serviceBase
         };
@@ -143,7 +152,12 @@ public class InstructorController : Controller
         if (string.IsNullOrWhiteSpace(asurite))
             return false;
 
-        var site = await _ddb.GetSiteForAsuriteAsync(asurite.Trim().ToLowerInvariant());
+        asurite = asurite.Trim().ToLowerInvariant();
+
+        if (_taAsurites.Contains(asurite))
+            return true;
+
+        var site = await _ddb.GetSiteForAsuriteAsync(asurite);
         return site.HasValue && _instructorSites.Contains(site.Value);
     }
 }
