@@ -71,9 +71,13 @@ else
                     <div class="card-body">
                         @if (slot.HasContent && slot.LastModified.HasValue)
                         {
-                            <p class="card-text text-muted small mb-3">
+                            <p class="card-text text-muted small mb-2">
                                 Last updated: @slot.LastModified.Value.ToString("yyyy-MM-dd HH:mm UTC")
                             </p>
+                            <a href="@(Model.ServiceBaseUrl)/sites/website@(Model.SiteNumber)/@(slot.Name)/"
+                               target="_blank" class="btn btn-outline-success btn-sm w-100 mb-2">
+                                View Live Page
+                            </a>
                         }
                         else
                         {
