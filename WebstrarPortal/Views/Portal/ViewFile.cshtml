@@ -1,0 +1,50 @@
+@model WebstrarPortal.Models.CodeViewerViewModel
+@{
+    ViewData["Title"] = Model.FileName;
+    var asurite = ViewBag.Asurite as string;
+    var backUrl = ViewBag.BackUrl as string ?? "/portal";
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="@backUrl">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="/portal/files/@(Model.SiteNumber)/@(Model.PageName)?asurite=@asurite">@Model.PageName</a></li>
+        <li class="breadcrumb-item active">@Model.FileName</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">
+        <code>@Model.FilePath</code>
+    </h4>
+    <a href="/portal/files/@(Model.SiteNumber)/@(Model.PageName)?asurite=@asurite"
+       class="btn btn-outline-secondary btn-sm">Back to Files</a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <pre class="m-0 p-3" style="max-height: 80vh; overflow: auto;"><code class="language-@Model.Language">@Model.Content</code></pre>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-aspnet.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('pre').forEach(function (el) {
+                el.classList.add('line-numbers');
+            });
+            Prism.highlightAll();
+        });
+    </script>
+}

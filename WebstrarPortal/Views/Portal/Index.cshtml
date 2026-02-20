@@ -74,10 +74,16 @@ else
                             <p class="card-text text-muted small mb-2">
                                 Last updated: @slot.LastModified.Value.ToString("yyyy-MM-dd HH:mm UTC")
                             </p>
-                            <a href="@(Model.ServiceBaseUrl)/sites/website@(Model.SiteNumber)/@(slot.Name)/"
-                               target="_blank" class="btn btn-outline-success btn-sm w-100 mb-2">
-                                View Live Page
-                            </a>
+                            <div class="d-flex gap-2 mb-2">
+                                <a href="@(Model.ServiceBaseUrl)/sites/website@(Model.SiteNumber)/@(slot.Name)/"
+                                   target="_blank" class="btn btn-success btn-sm flex-fill">
+                                    View Live Page
+                                </a>
+                                <a href="/portal/files/@(Model.SiteNumber)/@(slot.Name)?asurite=@Model.Asurite"
+                                   class="btn btn-outline-primary btn-sm flex-fill">
+                                    Browse Files
+                                </a>
+                            </div>
                         }
                         else
                         {
@@ -99,6 +105,19 @@ else
                                 @(slot.HasContent ? "Replace" : "Upload") ZIP
                             </button>
                         </form>
+
+                        @if (slot.HasContent)
+                        {
+                            <form asp-controller="Deploy" asp-action="Clear"
+                                  asp-route-page="@slot.Name"
+                                  method="post" class="mt-2"
+                                  onsubmit="return confirm('Are you sure you want to remove all files from @slot.Name?');">
+                                <input type="hidden" name="asurite" value="@Model.Asurite" />
+                                <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                                    Remove Files
+                                </button>
+                            </form>
+                        }
                     </div>
                 </div>
             </div>

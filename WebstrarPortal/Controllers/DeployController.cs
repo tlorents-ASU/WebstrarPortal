@@ -106,6 +106,63 @@ public class DeployController : Controller
         return RedirectToAction("Index", "Portal", new { asurite });
     }
 
+    [HttpPost("clear")]
+    public async Task<IActionResult> Clear(
+        [FromQuery] string page,
+        [FromForm] string asurite)
+    {
+        if (string.IsNullOrWhiteSpace(asurite))
+        {
+            TempData["Error"] = "ASURITE is required.";
+            return RedirectToAction("Index", "Portal");
+        }
+
+        asurite = asurite.Trim().ToLowerInvariant();
+
+        try
+        {
+            page = NormalizeAndValidatePage(page);
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = ex.Message;
+            return RedirectToAction("Index", "Portal", new { asurite });
+        }
+
+        var site = await _ddb.GetSiteForAsuriteAsync(asurite);
+        if (site == null)
+        {
+            TempData["Error"] = "No site assignment found for your ASURITE.";
+            return RedirectToAction("Index", "Portal", new { asurite });
+        }
+
+        var deployFolder = $@"C:\WebstrarDeploy\website{site}\{page}\";
+        var deployRoot = @"C:\WebstrarDeploy\";
+
+        var fullDeployFolder = Path.GetFullPath(deployFolder);
+        var fullDeployRoot = Path.GetFullPath(deployRoot);
+
+        if (!fullDeployFolder.StartsWith(fullDeployRoot, StringComparison.OrdinalIgnoreCase))
+        {
+            TempData["Error"] = "Invalid deploy path (safety check failed).";
+            return RedirectToAction("Index", "Portal", new { asurite });
+        }
+
+        try
+        {
+            if (Directory.Exists(fullDeployFolder))
+                Directory.Delete(fullDeployFolder, recursive: true);
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = $"Failed to remove files: {ex.Message}";
+            return RedirectToAction("Index", "Portal", new { asurite });
+        }
+
+        TempData["Success"] = $"All files removed from {page}.";
+        return RedirectToAction("Index", "Portal", new { asurite });
+    }
+
     private static string NormalizeAndValidatePage(string? page)
     {
         if (string.IsNullOrWhiteSpace(page))

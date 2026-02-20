@@ -75,4 +75,67 @@ public class PortalController : Controller
 
         return View("Index", model);
     }
+
+    [HttpGet("files/{siteNumber:int}/{pageName}")]
+    public async Task<IActionResult> Files(int siteNumber, string pageName, [FromQuery] string asurite)
+    {
+        if (string.IsNullOrWhiteSpace(asurite))
+            return RedirectToAction("Index");
+
+        asurite = asurite.Trim().ToLowerInvariant();
+        var site = await _ddb.GetSiteForAsuriteAsync(asurite);
+
+        // Students can only browse their own site
+        if (site == null || site.Value != siteNumber)
+            return RedirectToAction("Index");
+
+        var serviceBase = _config["CAS:ServiceBaseUrl"]?.TrimEnd('/') ?? Request.Scheme + "://" + Request.Host;
+
+        var model = new FileBrowserViewModel
+        {
+            SiteNumber = siteNumber,
+            PageName = pageName,
+            Files = _pageStatus.GetFileTree(siteNumber, pageName),
+            SiteBaseUrl = $"{serviceBase}/sites/website{siteNumber}/{pageName}"
+        };
+
+        ViewBag.Asurite = asurite;
+        ViewBag.BackUrl = $"/portal?asurite={asurite}";
+        return View("Files", model);
+    }
+
+    [HttpGet("files/{siteNumber:int}/{pageName}/view")]
+    public async Task<IActionResult> ViewFile(int siteNumber, string pageName,
+        [FromQuery] string path, [FromQuery] string asurite)
+    {
+        if (string.IsNullOrWhiteSpace(asurite))
+            return RedirectToAction("Index");
+
+        asurite = asurite.Trim().ToLowerInvariant();
+        var site = await _ddb.GetSiteForAsuriteAsync(asurite);
+
+        if (site == null || site.Value != siteNumber)
+            return RedirectToAction("Index");
+
+        if (string.IsNullOrWhiteSpace(path))
+            return RedirectToAction("Files", new { siteNumber, pageName, asurite });
+
+        var content = _pageStatus.ReadFileContent(siteNumber, pageName, path);
+        if (content == null)
+            return NotFound("File not found.");
+
+        var model = new CodeViewerViewModel
+        {
+            SiteNumber = siteNumber,
+            PageName = pageName,
+            FilePath = path,
+            FileName = Path.GetFileName(path),
+            Content = content,
+            Language = PageStatusService.GetLanguageFromExtension(path)
+        };
+
+        ViewBag.Asurite = asurite;
+        ViewBag.BackUrl = $"/portal?asurite={asurite}";
+        return View("ViewFile", model);
+    }
 }
