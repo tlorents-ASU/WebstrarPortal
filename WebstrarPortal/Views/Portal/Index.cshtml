@@ -71,13 +71,51 @@ else
                     <div class="card-body">
                         @if (slot.HasContent && slot.LastModified.HasValue)
                         {
-                            <p class="card-text text-muted small mb-2">
+                            <p class="card-text text-muted small mb-1">
                                 Last updated: @slot.LastModified.Value.ToString("yyyy-MM-dd HH:mm UTC")
                             </p>
+
+                            @* Default.aspx status — different messaging for Page0 vs sub-pages *@
+                            @if (slot.Index == 0)
+                            {
+                                if (slot.HasDefaultAspx)
+                                {
+                                    <p class="card-text small mb-2">
+                                        <span class="text-success fw-bold">&#10003; Default.aspx found</span>
+                                    </p>
+                                }
+                                else
+                                {
+                                    <p class="card-text small mb-2">
+                                        <span class="text-danger fw-bold">&#10007; Default.aspx missing (required for main entry point)</span>
+                                    </p>
+                                }
+                            }
+                            else
+                            {
+                                if (slot.HasDefaultAspx)
+                                {
+                                    <p class="card-text small mb-2">
+                                        <span class="text-success fw-bold">&#10003; Default.aspx found</span>
+                                    </p>
+                                }
+                                else
+                                {
+                                    <p class="card-text small mb-2" title="This page may be accessed via direct link (e.g. /@(slot.Name)/Login.aspx) or referenced from Page0.">
+                                        <span class="text-muted">No Default.aspx (common for sub-pages) &#9432;</span>
+                                    </p>
+                                }
+                            }
+
+                            @* Smart View Live Page link *@
+                            var liveUrl = slot.EntryFile != null
+                                ? $"{Model.ServiceBaseUrl}/sites/website{Model.SiteNumber}/{slot.Name}/{slot.EntryFile}"
+                                : $"/portal/files/{Model.SiteNumber}/{slot.Name}?asurite={Model.Asurite}";
+                            var liveTarget = slot.EntryFile != null ? "_blank" : "_self";
+                            var liveLabel = slot.EntryFile != null ? "View Live Page" : "Browse Files to View";
                             <div class="d-flex gap-2 mb-2">
-                                <a href="@(Model.ServiceBaseUrl)/sites/website@(Model.SiteNumber)/@(slot.Name)/"
-                                   target="_blank" class="btn btn-success btn-sm flex-fill">
-                                    View Live Page
+                                <a href="@liveUrl" target="@liveTarget" class="btn btn-success btn-sm flex-fill">
+                                    @liveLabel
                                 </a>
                                 <a href="/portal/files/@(Model.SiteNumber)/@(slot.Name)?asurite=@Model.Asurite"
                                    class="btn btn-outline-primary btn-sm flex-fill">

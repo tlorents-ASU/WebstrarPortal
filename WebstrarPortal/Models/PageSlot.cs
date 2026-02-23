@@ -8,4 +8,9 @@ public class PageSlot
     public int FileCount { get; set; }
     public DateTime? LastModified { get; set; }
     public bool HasDefaultAspx { get; set; }
+
+    /// <summary>
+    /// Best entry point file: Default.aspx if exists, else the single root .aspx, else null.
+    /// </summary>
+    public string? EntryFile { get; set; }
 }

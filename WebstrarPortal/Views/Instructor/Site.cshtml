@@ -41,14 +41,29 @@
                 <div class="card-body">
                     @if (slot.HasContent)
                     {
+                        @* Default.aspx status — different messaging for Page0 vs sub-pages *@
                         <p class="card-text small mb-1">
-                            @if (slot.HasDefaultAspx)
+                            @if (slot.Index == 0)
                             {
-                                <span class="text-success fw-bold">&#10003; Default.aspx found</span>
+                                if (slot.HasDefaultAspx)
+                                {
+                                    <span class="text-success fw-bold">&#10003; Default.aspx found</span>
+                                }
+                                else
+                                {
+                                    <span class="text-danger fw-bold">&#10007; Default.aspx missing (required)</span>
+                                }
                             }
                             else
                             {
-                                <span class="text-warning fw-bold">&#10007; Default.aspx missing</span>
+                                if (slot.HasDefaultAspx)
+                                {
+                                    <span class="text-success fw-bold">&#10003; Default.aspx found</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted" title="This page may be accessed via direct link or referenced from Page0.">No Default.aspx (sub-page) &#9432;</span>
+                                }
                             }
                         </p>
                         @if (slot.LastModified.HasValue)
@@ -58,10 +73,15 @@
                             </p>
                         }
 
+                        @* Smart View Live Page link *@
+                        var instrLiveUrl = slot.EntryFile != null
+                            ? $"{serviceBase}/sites/website{Model.SiteNumber}/{slot.Name}/{slot.EntryFile}"
+                            : $"/instructor/site/{Model.SiteNumber}/page/{slot.Name}/files?asurite={asurite}";
+                        var instrTarget = slot.EntryFile != null ? "_blank" : "_self";
+                        var instrLabel = slot.EntryFile != null ? "View Live Page" : "Browse Files to View";
                         <div class="d-grid gap-2">
-                            <a href="@(serviceBase)/sites/website@(Model.SiteNumber)/@(slot.Name)/"
-                               target="_blank" class="btn btn-outline-success btn-sm">
-                                View Live Page
+                            <a href="@instrLiveUrl" target="@instrTarget" class="btn btn-outline-success btn-sm">
+                                @instrLabel
                             </a>
                             <a href="/instructor/site/@(Model.SiteNumber)/page/@(slot.Name)/files?asurite=@asurite"
                                class="btn btn-outline-primary btn-sm">

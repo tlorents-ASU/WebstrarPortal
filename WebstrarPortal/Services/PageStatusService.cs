@@ -25,6 +25,9 @@ public class PageStatusService
                 slot.HasDefaultAspx = files.Any(f =>
                     Path.GetFileName(f).Equals("Default.aspx", StringComparison.OrdinalIgnoreCase));
 
+                // Smart entry file: Default.aspx > single root .aspx > null
+                slot.EntryFile = FindEntryFile(folder);
+
                 if (files.Length > 0)
                 {
                     slot.LastModified = files
@@ -61,6 +64,33 @@ public class PageStatusService
             return null;
 
         return File.ReadAllText(fullPath);
+    }
+
+    /// <summary>
+    /// Returns the best entry file: Default.aspx if it exists at root,
+    /// else the single .aspx at root, else null.
+    /// </summary>
+    private static string? FindEntryFile(string folder)
+    {
+        // Check root folder for Default.aspx
+        var defaultAspx = Path.Combine(folder, "Default.aspx");
+        if (File.Exists(defaultAspx))
+            return "Default.aspx";
+
+        // Check for exactly one .aspx in the root folder
+        var rootAspxFiles = Directory.GetFiles(folder, "*.aspx", SearchOption.TopDirectoryOnly);
+        if (rootAspxFiles.Length == 1)
+            return Path.GetFileName(rootAspxFiles[0]);
+
+        // Check subdirectories for Default.aspx (e.g. Pages/Default.aspx)
+        var subDefault = Directory.GetFiles(folder, "Default.aspx", SearchOption.AllDirectories);
+        if (subDefault.Length == 1)
+        {
+            var rel = Path.GetRelativePath(folder, subDefault[0]).Replace('\\', '/');
+            return rel;
+        }
+
+        return null;
     }
 
     private static List<FileNode> BuildTree(string currentDir, string rootDir)
