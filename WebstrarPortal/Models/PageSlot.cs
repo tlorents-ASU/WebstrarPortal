@@ -13,4 +13,9 @@ public class PageSlot
     /// Best entry point file: Default.aspx if exists, else the single root .aspx, else null.
     /// </summary>
     public string? EntryFile { get; set; }
+
+    /// <summary>
+    /// All root-level .aspx filenames in this page folder.
+    /// </summary>
+    public List<string> AspxFiles { get; set; } = new();
 }

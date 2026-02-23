@@ -14,7 +14,26 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h3>@Model.PageName - Files</h3>
-    <a href="@Model.SiteBaseUrl/" target="_blank" class="btn btn-success btn-sm">View Live Page</a>
+    @if (Model.AspxFiles.Count == 0)
+    {
+        @* No .aspx files — no view button *@
+    }
+    else if (Model.EntryFile != null && (Model.AspxFiles.Any(f => f.Equals("Default.aspx", StringComparison.OrdinalIgnoreCase)) || Model.AspxFiles.Count == 1))
+    {
+        var label = Model.AspxFiles.Any(f => f.Equals("Default.aspx", StringComparison.OrdinalIgnoreCase))
+            ? "View Live Page"
+            : $"View {Model.EntryFile}";
+        <a href="@Model.SiteBaseUrl/@Model.EntryFile" target="_blank" class="btn btn-success btn-sm">@label</a>
+    }
+    else
+    {
+        <div class="btn-group">
+            @foreach (var aspx in Model.AspxFiles)
+            {
+                <a href="@Model.SiteBaseUrl/@aspx" target="_blank" class="btn btn-success btn-sm">View @aspx</a>
+            }
+        </div>
+    }
 </div>
 
 @if (Model.Files.Count == 0)

@@ -104,6 +104,9 @@ public class InstructorController : Controller
         var allAssignments = await _ddb.GetAllSiteAssignmentsAsync();
         var serviceBase = _config["CAS:ServiceBaseUrl"]?.TrimEnd('/') ?? Request.Scheme + "://" + Request.Host;
 
+        var pageStatuses = _pageStatus.GetPageStatuses(siteNumber);
+        var thisPage = pageStatuses.FirstOrDefault(p => p.Name == pageName);
+
         var model = new FileBrowserViewModel
         {
             SiteNumber = siteNumber,
@@ -112,7 +115,9 @@ public class InstructorController : Controller
                 ? allAssignments[siteNumber].OrderBy(a => a).ToList()
                 : new List<string>(),
             Files = _pageStatus.GetFileTree(siteNumber, pageName),
-            SiteBaseUrl = $"{serviceBase}/sites/website{siteNumber}/{pageName}"
+            SiteBaseUrl = $"{serviceBase}/sites/website{siteNumber}/{pageName}",
+            AspxFiles = thisPage?.AspxFiles ?? new List<string>(),
+            EntryFile = thisPage?.EntryFile
         };
 
         ViewBag.Asurite = asurite;

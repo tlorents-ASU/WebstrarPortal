@@ -55,7 +55,20 @@ else
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
         @foreach (var slot in Model.Pages)
         {
-            var borderClass = slot.HasContent ? "border-success" : "border-secondary";
+            // Border logic: green if Default.aspx OR exactly 1 .aspx; yellow if multiple .aspx or has files but no .aspx; gray if empty
+            string borderClass;
+            if (!slot.HasContent)
+            {
+                borderClass = "border-secondary";
+            }
+            else if (slot.HasDefaultAspx || slot.AspxFiles.Count == 1)
+            {
+                borderClass = "border-success";
+            }
+            else
+            {
+                borderClass = "border-warning";
+            }
             var badgeClass = slot.HasContent ? "bg-success" : "bg-secondary";
             var statusText = slot.HasContent ? $"{slot.FileCount} file(s)" : "Empty";
             var dropId = $"drop-{slot.Index}";
@@ -75,36 +88,40 @@ else
                                 Last updated: @slot.LastModified.Value.ToString("yyyy-MM-dd HH:mm UTC")
                             </p>
 
-                            @* Default.aspx status — different messaging for Page0 vs sub-pages *@
-                            @if (slot.Index == 0)
-                            {
-                                if (slot.HasDefaultAspx)
+                            @* Status text — 15px, bold *@
+                            <p class="card-text mb-2" style="font-size: 15px; font-weight: 700;">
+                                @if (slot.HasDefaultAspx)
                                 {
-                                    <p class="card-text small mb-2">
-                                        <span class="text-success fw-bold">&#10003; Default.aspx found</span>
-                                    </p>
+                                    <span class="text-success">&#10003; Default.aspx found</span>
+                                }
+                                else if (slot.Index == 0)
+                                {
+                                    <span class="text-danger">&#10007; Default.aspx missing (required)</span>
+                                }
+                                else if (slot.AspxFiles.Count == 1)
+                                {
+                                    <span class="text-success">&#10003; Contains 1 .aspx entry point</span>
+                                }
+                                else if (slot.AspxFiles.Count > 1)
+                                {
+                                    <span class="text-warning">Contains @slot.AspxFiles.Count .aspx files</span>
                                 }
                                 else
                                 {
-                                    <p class="card-text small mb-2">
-                                        <span class="text-danger fw-bold">&#10007; Default.aspx missing (required for main entry point)</span>
-                                    </p>
+                                    <span class="text-warning">No .aspx files</span>
                                 }
+                            </p>
+                            @if (!slot.HasDefaultAspx && slot.AspxFiles.Count > 1)
+                            {
+                                <p class="card-text text-muted small mb-2">
+                                    No Default.aspx &mdash; use direct links to each .aspx file
+                                </p>
                             }
-                            else
+                            else if (!slot.HasDefaultAspx && slot.AspxFiles.Count == 0 && slot.Index != 0 && slot.HasContent)
                             {
-                                if (slot.HasDefaultAspx)
-                                {
-                                    <p class="card-text small mb-2">
-                                        <span class="text-success fw-bold">&#10003; Default.aspx found</span>
-                                    </p>
-                                }
-                                else
-                                {
-                                    <p class="card-text small mb-2" title="This page may be accessed via direct link (e.g. /@(slot.Name)/Login.aspx) or referenced from Page0.">
-                                        <span class="text-muted">No Default.aspx (common for sub-pages) &#9432;</span>
-                                    </p>
-                                }
+                                <p class="card-text text-muted small mb-2">
+                                    No .aspx entry points found &mdash; visitors must link to specific files
+                                </p>
                             }
 
                             @* Smart View Live Page link *@
@@ -118,7 +135,7 @@ else
                                     @liveLabel
                                 </a>
                                 <a href="/portal/files/@(Model.SiteNumber)/@(slot.Name)?asurite=@Model.Asurite"
-                                   class="btn btn-outline-primary btn-sm flex-fill">
+                                   class="btn btn-primary btn-sm flex-fill">
                                     Browse Files
                                 </a>
                             </div>

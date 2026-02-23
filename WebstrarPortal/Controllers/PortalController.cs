@@ -91,12 +91,17 @@ public class PortalController : Controller
 
         var serviceBase = _config["CAS:ServiceBaseUrl"]?.TrimEnd('/') ?? Request.Scheme + "://" + Request.Host;
 
+        var pageStatuses = _pageStatus.GetPageStatuses(siteNumber);
+        var thisPage = pageStatuses.FirstOrDefault(p => p.Name == pageName);
+
         var model = new FileBrowserViewModel
         {
             SiteNumber = siteNumber,
             PageName = pageName,
             Files = _pageStatus.GetFileTree(siteNumber, pageName),
-            SiteBaseUrl = $"{serviceBase}/sites/website{siteNumber}/{pageName}"
+            SiteBaseUrl = $"{serviceBase}/sites/website{siteNumber}/{pageName}",
+            AspxFiles = thisPage?.AspxFiles ?? new List<string>(),
+            EntryFile = thisPage?.EntryFile
         };
 
         ViewBag.Asurite = asurite;

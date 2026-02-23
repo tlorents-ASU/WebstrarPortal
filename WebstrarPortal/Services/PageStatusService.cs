@@ -25,6 +25,12 @@ public class PageStatusService
                 slot.HasDefaultAspx = files.Any(f =>
                     Path.GetFileName(f).Equals("Default.aspx", StringComparison.OrdinalIgnoreCase));
 
+                // Collect root-level .aspx filenames
+                slot.AspxFiles = Directory.GetFiles(folder, "*.aspx", SearchOption.TopDirectoryOnly)
+                    .Select(f => Path.GetFileName(f))
+                    .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
                 // Smart entry file: Default.aspx > single root .aspx > null
                 slot.EntryFile = FindEntryFile(folder);
 
