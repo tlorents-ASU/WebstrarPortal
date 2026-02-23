@@ -27,7 +27,7 @@
     }
     else
     {
-        <div class="btn-group">
+        <div class="d-flex flex-wrap gap-2">
             @foreach (var aspx in Model.AspxFiles)
             {
                 <a href="@Model.SiteBaseUrl/@aspx" target="_blank" class="btn btn-success btn-sm">View @aspx</a>
