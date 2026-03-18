@@ -12,6 +12,7 @@ public class PortalController : Controller
     private readonly IConfiguration _config;
     private readonly HashSet<int> _instructorSites;
     private readonly HashSet<string> _taAsurites;
+    private readonly Dictionary<string, List<int>> _multiSiteUsers;
 
     public PortalController(DynamoDbService ddb, PageStatusService pageStatus, IConfiguration config)
     {
@@ -23,10 +24,15 @@ public class PortalController : Controller
         _taAsurites = config.GetSection("TaAsurites")
             .Get<string[]>()?.Select(a => a.ToLowerInvariant()).ToHashSet()
             ?? new HashSet<string>();
+        _multiSiteUsers = config.GetSection("MultiSiteUsers")
+            .Get<Dictionary<string, List<int>>>() ?? new Dictionary<string, List<int>>();
+        // Normalize keys to lowercase
+        _multiSiteUsers = _multiSiteUsers
+            .ToDictionary(k => k.Key.ToLowerInvariant(), v => v.Value);
     }
 
     [HttpGet("")]
-    public async Task<IActionResult> Index([FromQuery] string? asurite)
+    public async Task<IActionResult> Index([FromQuery] string? asurite, [FromQuery] int? site)
     {
         if (string.IsNullOrWhiteSpace(asurite))
         {
@@ -45,9 +51,34 @@ public class PortalController : Controller
             return RedirectToAction("Index", "Instructor", new { asurite });
         }
 
-        var site = await _ddb.GetSiteForAsuriteAsync(asurite);
+        // Multi-site users: show site picker or dashboard for selected site
+        if (_multiSiteUsers.TryGetValue(asurite, out var sites))
+        {
+            if (site.HasValue && sites.Contains(site.Value))
+            {
+                // They picked a site — show the student dashboard for it
+                var serviceBase = _config["CAS:ServiceBaseUrl"]?.TrimEnd('/') ?? Request.Scheme + "://" + Request.Host;
+                var model = new DashboardViewModel
+                {
+                    Asurite = asurite,
+                    SiteNumber = site.Value,
+                    Pages = _pageStatus.GetPageStatuses(site.Value),
+                    ServiceBaseUrl = serviceBase,
+                    SuccessMessage = TempData["Success"] as string,
+                    ErrorMessage = TempData["Error"] as string
+                };
+                return View("Index", model);
+            }
 
-        if (site == null)
+            // No site selected — show the site picker
+            ViewBag.Asurite = asurite;
+            ViewBag.Sites = sites;
+            return View("SitePicker");
+        }
+
+        var siteResult = await _ddb.GetSiteForAsuriteAsync(asurite);
+
+        if (siteResult == null)
         {
             return View("Index", new DashboardViewModel
             {
@@ -56,24 +87,26 @@ public class PortalController : Controller
         }
 
         // Instructor sites get redirected to instructor dashboard
-        if (_instructorSites.Contains(site.Value))
+        if (_instructorSites.Contains(siteResult.Value))
         {
             return RedirectToAction("Index", "Instructor", new { asurite });
         }
 
-        var serviceBase = _config["CAS:ServiceBaseUrl"]?.TrimEnd('/') ?? Request.Scheme + "://" + Request.Host;
-
-        var model = new DashboardViewModel
         {
-            Asurite = asurite,
-            SiteNumber = site.Value,
-            Pages = _pageStatus.GetPageStatuses(site.Value),
-            ServiceBaseUrl = serviceBase,
-            SuccessMessage = TempData["Success"] as string,
-            ErrorMessage = TempData["Error"] as string
-        };
+            var serviceBase = _config["CAS:ServiceBaseUrl"]?.TrimEnd('/') ?? Request.Scheme + "://" + Request.Host;
 
-        return View("Index", model);
+            var model = new DashboardViewModel
+            {
+                Asurite = asurite,
+                SiteNumber = siteResult.Value,
+                Pages = _pageStatus.GetPageStatuses(siteResult.Value),
+                ServiceBaseUrl = serviceBase,
+                SuccessMessage = TempData["Success"] as string,
+                ErrorMessage = TempData["Error"] as string
+            };
+
+            return View("Index", model);
+        }
     }
 
     [HttpGet("files/{siteNumber:int}/{pageName}")]
@@ -83,10 +116,8 @@ public class PortalController : Controller
             return RedirectToAction("Index");
 
         asurite = asurite.Trim().ToLowerInvariant();
-        var site = await _ddb.GetSiteForAsuriteAsync(asurite);
 
-        // Students can only browse their own site
-        if (site == null || site.Value != siteNumber)
+        if (!await UserOwnsSite(asurite, siteNumber))
             return RedirectToAction("Index");
 
         var serviceBase = _config["CAS:ServiceBaseUrl"]?.TrimEnd('/') ?? Request.Scheme + "://" + Request.Host;
@@ -105,7 +136,7 @@ public class PortalController : Controller
         };
 
         ViewBag.Asurite = asurite;
-        ViewBag.BackUrl = $"/portal?asurite={asurite}";
+        ViewBag.BackUrl = $"/portal?asurite={asurite}&site={siteNumber}";
         return View("Files", model);
     }
 
@@ -117,9 +148,8 @@ public class PortalController : Controller
             return RedirectToAction("Index");
 
         asurite = asurite.Trim().ToLowerInvariant();
-        var site = await _ddb.GetSiteForAsuriteAsync(asurite);
 
-        if (site == null || site.Value != siteNumber)
+        if (!await UserOwnsSite(asurite, siteNumber))
             return RedirectToAction("Index");
 
         if (string.IsNullOrWhiteSpace(path))
@@ -140,7 +170,21 @@ public class PortalController : Controller
         };
 
         ViewBag.Asurite = asurite;
-        ViewBag.BackUrl = $"/portal?asurite={asurite}";
+        ViewBag.BackUrl = $"/portal?asurite={asurite}&site={siteNumber}";
         return View("ViewFile", model);
+    }
+
+    /// <summary>
+    /// Checks if a user owns a site — either via DynamoDB or MultiSiteUsers config.
+    /// </summary>
+    private async Task<bool> UserOwnsSite(string asurite, int siteNumber)
+    {
+        // Check multi-site config first
+        if (_multiSiteUsers.TryGetValue(asurite, out var sites) && sites.Contains(siteNumber))
+            return true;
+
+        // Fall back to DynamoDB
+        var site = await _ddb.GetSiteForAsuriteAsync(asurite);
+        return site.HasValue && site.Value == siteNumber;
     }
 }

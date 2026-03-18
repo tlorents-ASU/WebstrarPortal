@@ -149,6 +149,7 @@ else
                               asp-route-page="@slot.Name"
                               method="post" enctype="multipart/form-data">
                             <input type="hidden" name="asurite" value="@Model.Asurite" />
+                            <input type="hidden" name="siteOverride" value="@Model.SiteNumber" />
 
                             <div id="@dropId" class="drop-zone mb-2" onclick="document.getElementById('@fileId').click()">
                                 <span class="drop-zone-text">Drag & drop <strong>@(slot.Name).zip</strong> here or click to browse</span>
@@ -168,6 +169,7 @@ else
                                   method="post" class="mt-2"
                                   onsubmit="return confirm('Are you sure you want to remove all files from @slot.Name?');">
                                 <input type="hidden" name="asurite" value="@Model.Asurite" />
+                                <input type="hidden" name="siteOverride" value="@Model.SiteNumber" />
                                 <button type="submit" class="btn btn-outline-danger btn-sm w-100">
                                     Remove Files
                                 </button>

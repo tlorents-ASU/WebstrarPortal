@@ -8,11 +8,18 @@ public class DeployController : Controller
 {
     private readonly DynamoDbService _ddb;
     private readonly ZipDeployService _zip;
+    private readonly IConfiguration _config;
+    private readonly Dictionary<string, List<int>> _multiSiteUsers;
 
-    public DeployController(DynamoDbService ddb, ZipDeployService zip)
+    public DeployController(DynamoDbService ddb, ZipDeployService zip, IConfiguration config)
     {
         _ddb = ddb;
         _zip = zip;
+        _config = config;
+        _multiSiteUsers = config.GetSection("MultiSiteUsers")
+            .Get<Dictionary<string, List<int>>>() ?? new Dictionary<string, List<int>>();
+        _multiSiteUsers = _multiSiteUsers
+            .ToDictionary(k => k.Key.ToLowerInvariant(), v => v.Value);
     }
 
     [HttpPost("upload")]
@@ -21,7 +28,8 @@ public class DeployController : Controller
     public async Task<IActionResult> Upload(
         [FromQuery] string page,
         [FromForm] string asurite,
-        [FromForm] IFormFile file)
+        [FromForm] IFormFile file,
+        [FromForm] int? siteOverride)
     {
         if (string.IsNullOrWhiteSpace(asurite))
         {
@@ -47,14 +55,26 @@ public class DeployController : Controller
             return RedirectToAction("Index", "Portal", new { asurite });
         }
 
-        var site = await _ddb.GetSiteForAsuriteAsync(asurite);
-        if (site == null)
+        // Resolve site number: multi-site override or DynamoDB
+        int siteNumber;
+        if (siteOverride.HasValue
+            && _multiSiteUsers.TryGetValue(asurite, out var allowedSites)
+            && allowedSites.Contains(siteOverride.Value))
         {
-            TempData["Error"] = "No site assignment found for your ASURITE.";
-            return RedirectToAction("Index", "Portal", new { asurite });
+            siteNumber = siteOverride.Value;
+        }
+        else
+        {
+            var site = await _ddb.GetSiteForAsuriteAsync(asurite);
+            if (site == null)
+            {
+                TempData["Error"] = "No site assignment found for your ASURITE.";
+                return RedirectToAction("Index", "Portal", new { asurite });
+            }
+            siteNumber = site.Value;
         }
 
-        var deployFolder = $@"C:\WebstrarDeploy\website{site}\{page}\";
+        var deployFolder = $@"C:\WebstrarDeploy\website{siteNumber}\{page}\";
         var deployRoot = @"C:\WebstrarDeploy\";
 
         var fullDeployFolder = Path.GetFullPath(deployFolder);
@@ -80,7 +100,7 @@ public class DeployController : Controller
         }
 
         var tempZip = Path.Combine(Path.GetTempPath(),
-            $"webstrar_{asurite}_{site}_{page}_{Guid.NewGuid():N}.zip");
+            $"webstrar_{asurite}_{siteNumber}_{page}_{Guid.NewGuid():N}.zip");
 
         await using (var fs = System.IO.File.Create(tempZip))
         {
@@ -103,13 +123,14 @@ public class DeployController : Controller
         }
 
         TempData["Success"] = $"Deployed {extracted} file(s) to {page} successfully.";
-        return RedirectToAction("Index", "Portal", new { asurite });
+        return RedirectToAction("Index", "Portal", new { asurite, site = siteNumber });
     }
 
     [HttpPost("clear")]
     public async Task<IActionResult> Clear(
         [FromQuery] string page,
-        [FromForm] string asurite)
+        [FromForm] string asurite,
+        [FromForm] int? siteOverride)
     {
         if (string.IsNullOrWhiteSpace(asurite))
         {
@@ -129,14 +150,26 @@ public class DeployController : Controller
             return RedirectToAction("Index", "Portal", new { asurite });
         }
 
-        var site = await _ddb.GetSiteForAsuriteAsync(asurite);
-        if (site == null)
+        // Resolve site number: multi-site override or DynamoDB
+        int siteNumber;
+        if (siteOverride.HasValue
+            && _multiSiteUsers.TryGetValue(asurite, out var allowedSites)
+            && allowedSites.Contains(siteOverride.Value))
         {
-            TempData["Error"] = "No site assignment found for your ASURITE.";
-            return RedirectToAction("Index", "Portal", new { asurite });
+            siteNumber = siteOverride.Value;
+        }
+        else
+        {
+            var site = await _ddb.GetSiteForAsuriteAsync(asurite);
+            if (site == null)
+            {
+                TempData["Error"] = "No site assignment found for your ASURITE.";
+                return RedirectToAction("Index", "Portal", new { asurite });
+            }
+            siteNumber = site.Value;
         }
 
-        var deployFolder = $@"C:\WebstrarDeploy\website{site}\{page}\";
+        var deployFolder = $@"C:\WebstrarDeploy\website{siteNumber}\{page}\";
         var deployRoot = @"C:\WebstrarDeploy\";
 
         var fullDeployFolder = Path.GetFullPath(deployFolder);
@@ -160,7 +193,7 @@ public class DeployController : Controller
         }
 
         TempData["Success"] = $"All files removed from {page}.";
-        return RedirectToAction("Index", "Portal", new { asurite });
+        return RedirectToAction("Index", "Portal", new { asurite, site = siteNumber });
     }
 
     private static string NormalizeAndValidatePage(string? page)

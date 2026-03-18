@@ -1,0 +1,29 @@
+@{
+    ViewData["Title"] = "Select a Site";
+    var asurite = ViewBag.Asurite as string;
+    var sites = ViewBag.Sites as List<int>;
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body text-center">
+                <h3 class="card-title mb-3">Select a Site</h3>
+                <p class="text-muted">
+                    Logged in as <strong>@asurite</strong> &mdash; you have access to multiple sites.
+                </p>
+                <div class="d-grid gap-3 mt-4">
+                    @foreach (var siteNum in sites)
+                    {
+                        <a href="/portal?asurite=@asurite&site=@siteNum" class="btn btn-primary btn-lg">
+                            website@(siteNum)
+                        </a>
+                    }
+                </div>
+                <div class="mt-4">
+                    <a href="/portal" class="btn btn-outline-secondary btn-sm">Switch User</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
