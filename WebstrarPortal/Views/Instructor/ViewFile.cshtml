@@ -1,14 +1,13 @@
 @model WebstrarPortal.Models.CodeViewerViewModel
 @{
     ViewData["Title"] = Model.FileName;
-    var asurite = ViewBag.Asurite as string;
 }
 
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="/instructor?asurite=@asurite">All Sites</a></li>
-        <li class="breadcrumb-item"><a href="/instructor/site/@(Model.SiteNumber)?asurite=@asurite">website@(Model.SiteNumber)</a></li>
-        <li class="breadcrumb-item"><a href="/instructor/site/@(Model.SiteNumber)/page/@(Model.PageName)/files?asurite=@asurite">@Model.PageName</a></li>
+        <li class="breadcrumb-item"><a href="/instructor">All Sites</a></li>
+        <li class="breadcrumb-item"><a href="/instructor/site/@(Model.SiteNumber)">website@(Model.SiteNumber)</a></li>
+        <li class="breadcrumb-item"><a href="/instructor/site/@(Model.SiteNumber)/page/@(Model.PageName)/files">@Model.PageName</a></li>
         <li class="breadcrumb-item active">@Model.FileName</li>
     </ol>
 </nav>
@@ -17,7 +16,7 @@
     <h4 class="mb-0">
         <code>@Model.FilePath</code>
     </h4>
-    <a href="/instructor/site/@(Model.SiteNumber)/page/@(Model.PageName)/files?asurite=@asurite"
+    <a href="/instructor/site/@(Model.SiteNumber)/page/@(Model.PageName)/files"
        class="btn btn-outline-secondary btn-sm">Back to Files</a>
 </div>
 

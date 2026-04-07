@@ -15,13 +15,10 @@
                 <div class="d-grid gap-3 mt-4">
                     @foreach (var siteNum in sites)
                     {
-                        <a href="/portal?asurite=@asurite&site=@siteNum" class="btn btn-primary btn-lg">
+                        <a href="/portal?site=@siteNum" class="btn btn-primary btn-lg">
                             website@(siteNum)
                         </a>
                     }
-                </div>
-                <div class="mt-4">
-                    <a href="/portal" class="btn btn-outline-secondary btn-sm">Switch User</a>
                 </div>
             </div>
         </div>

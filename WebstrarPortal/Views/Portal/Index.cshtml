@@ -1,7 +1,6 @@
 @model WebstrarPortal.Models.DashboardViewModel
 @{
     ViewData["Title"] = "Dashboard";
-    var hasSession = !string.IsNullOrWhiteSpace(Model.Asurite);
 }
 
 @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
@@ -20,180 +19,141 @@
     </div>
 }
 
-@if (!hasSession)
-{
-    <div class="row justify-content-center mt-5">
-        <div class="col-md-5">
-            <div class="card">
-                <div class="card-body text-center">
-                    <h3 class="card-title mb-3">Webstrar Portal</h3>
-                    <p class="text-muted">Enter your ASURITE to manage your site pages.</p>
-                    <form method="get" action="/portal">
-                        <div class="mb-3">
-                            <input type="text" name="asurite" class="form-control form-control-lg text-center"
-                                   placeholder="ASURITE (e.g. jdoe12)" required autofocus />
-                        </div>
-                        <button type="submit" class="btn btn-lg w-100" style="background-color: #8C1D40; color: white;">Go to Dashboard</button>
-                    </form>
-                </div>
-            </div>
-        </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>Webstrar Dashboard</h2>
+        <p class="text-muted mb-0">
+            ASURITE: <strong>@Model.Asurite</strong> &mdash; Site <strong>@Model.SiteNumber</strong>
+        </p>
     </div>
-}
-else
-{
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2>Webstrar Dashboard</h2>
-            <p class="text-muted mb-0">
-                ASURITE: <strong>@Model.Asurite</strong> &mdash; Site <strong>@Model.SiteNumber</strong>
-                &nbsp; <a href="/portal" class="btn btn-outline-secondary btn-sm">Switch User</a>
-            </p>
-        </div>
-    </div>
+</div>
 
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
-        @foreach (var slot in Model.Pages)
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
+    @foreach (var slot in Model.Pages)
+    {
+        // Border logic: green if Default.aspx OR exactly 1 .aspx; yellow if multiple .aspx or has files but no .aspx; gray if empty
+        string borderClass;
+        if (!slot.HasContent)
         {
-            // Border logic: green if Default.aspx OR exactly 1 .aspx; yellow if multiple .aspx or has files but no .aspx; gray if empty
-            string borderClass;
-            if (!slot.HasContent)
-            {
-                borderClass = "border-secondary";
-            }
-            else if (slot.HasDefaultAspx || slot.AspxFiles.Count == 1)
-            {
-                borderClass = "border-success";
-            }
-            else
-            {
-                borderClass = "border-warning";
-            }
-            var badgeClass = slot.HasContent ? "bg-success" : "bg-secondary";
-            var statusText = slot.HasContent ? $"{slot.FileCount} file(s)" : "Empty";
-            var dropId = $"drop-{slot.Index}";
-            var fileId = $"file-{slot.Index}";
-            var formId = $"form-{slot.Index}";
+            borderClass = "border-secondary";
+        }
+        else if (slot.HasDefaultAspx || slot.AspxFiles.Count == 1)
+        {
+            borderClass = "border-success";
+        }
+        else
+        {
+            borderClass = "border-warning";
+        }
+        var badgeClass = slot.HasContent ? "bg-success" : "bg-secondary";
+        var statusText = slot.HasContent ? $"{slot.FileCount} file(s)" : "Empty";
+        var dropId = $"drop-{slot.Index}";
+        var fileId = $"file-{slot.Index}";
+        var formId = $"form-{slot.Index}";
 
-            <div class="col">
-                <div class="card h-100 @borderClass">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <strong>@slot.Name</strong>
-                        <span class="badge @badgeClass">@statusText</span>
-                    </div>
-                    <div class="card-body">
-                        @if (slot.HasContent && slot.LastModified.HasValue)
+        <div class="col">
+            <div class="card h-100 @borderClass">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <strong>@slot.Name</strong>
+                    <span class="badge @badgeClass">@statusText</span>
+                </div>
+                <div class="card-body">
+                    @if (slot.HasContent && slot.LastModified.HasValue)
+                    {
+                        <p class="card-text text-muted small mb-1">
+                            Last updated: @slot.LastModified.Value.ToString("yyyy-MM-dd HH:mm UTC")
+                        </p>
+
+                        @* Status text — 15px, bold *@
+                        <p class="card-text mb-2" style="font-size: 15px; font-weight: 700;">
+                            @if (slot.HasDefaultAspx)
+                            {
+                                <span class="text-success">&#10003; Default.aspx found</span>
+                            }
+                            else if (slot.Index == 0)
+                            {
+                                <span class="text-danger">&#10007; Default.aspx missing (required)</span>
+                            }
+                            else if (slot.AspxFiles.Count == 1)
+                            {
+                                <span class="text-success">&#10003; Contains 1 .aspx entry point</span>
+                            }
+                            else if (slot.AspxFiles.Count > 1)
+                            {
+                                <span style="color: #0d6efdf7;">Contains @slot.AspxFiles.Count .aspx files</span>
+                            }
+                            else
+                            {
+                                <span style="color: #0d6efdf7;">No .aspx files</span>
+                            }
+                        </p>
+                        @if (!slot.HasDefaultAspx && slot.AspxFiles.Count > 1)
                         {
-                            <p class="card-text text-muted small mb-1">
-                                Last updated: @slot.LastModified.Value.ToString("yyyy-MM-dd HH:mm UTC")
+                            <p class="card-text text-muted small mb-2">
+                                No Default.aspx &mdash; use direct links to each .aspx file
                             </p>
-
-                            @* Status text — 15px, bold *@
-                            <p class="card-text mb-2" style="font-size: 15px; font-weight: 700;">
-                                @if (slot.HasDefaultAspx)
-                                {
-                                    <span class="text-success">&#10003; Default.aspx found</span>
-                                }
-                                else if (slot.Index == 0)
-                                {
-                                    <span class="text-danger">&#10007; Default.aspx missing (required)</span>
-                                }
-                                else if (slot.AspxFiles.Count == 1)
-                                {
-                                    <span class="text-success">&#10003; Contains 1 .aspx entry point</span>
-                                }
-                                else if (slot.AspxFiles.Count > 1)
-                                {
-                                    <span style="color: #0d6efdf7;">Contains @slot.AspxFiles.Count .aspx files</span>
-                                }
-                                else
-                                {
-                                    <span style="color: #0d6efdf7;">No .aspx files</span>
-                                }
-                            </p>
-                            @if (!slot.HasDefaultAspx && slot.AspxFiles.Count > 1)
-                            {
-                                <p class="card-text text-muted small mb-2">
-                                    No Default.aspx &mdash; use direct links to each .aspx file
-                                </p>
-                            }
-                            else if (!slot.HasDefaultAspx && slot.AspxFiles.Count == 0 && slot.Index != 0 && slot.HasContent)
-                            {
-                                <p class="card-text text-muted small mb-2">
-                                    No .aspx entry points found &mdash; visitors must link to specific files
-                                </p>
-                            }
-
-                            @* Smart View Live Page link *@
-                            var liveUrl = slot.EntryFile != null
-                                ? $"{Model.ServiceBaseUrl}/sites/website{Model.SiteNumber}/{slot.Name}/{slot.EntryFile}"
-                                : $"/portal/files/{Model.SiteNumber}/{slot.Name}?asurite={Model.Asurite}";
-                            var liveTarget = slot.EntryFile != null ? "_blank" : "_self";
-                            var liveLabel = slot.EntryFile != null ? "View Live Page" : "Browse Files to View";
-                            <div class="d-flex gap-2 mb-2">
-                                <a href="@liveUrl" target="@liveTarget" class="btn btn-success btn-sm flex-fill">
-                                    @liveLabel
-                                </a>
-                                <a href="/portal/files/@(Model.SiteNumber)/@(slot.Name)?asurite=@Model.Asurite"
-                                   class="btn btn-primary btn-sm flex-fill">
-                                    Browse Files
-                                </a>
-                            </div>
                         }
-                        else
+                        else if (!slot.HasDefaultAspx && slot.AspxFiles.Count == 0 && slot.Index != 0 && slot.HasContent)
                         {
-                            <p class="card-text text-muted small mb-3">No content uploaded yet.</p>
+                            <p class="card-text text-muted small mb-2">
+                                No .aspx entry points found &mdash; visitors must link to specific files
+                            </p>
                         }
 
-                        <form id="@formId" asp-controller="Deploy" asp-action="Upload"
+                        @* Smart View Live Page link *@
+                        var liveUrl = slot.EntryFile != null
+                            ? $"{Model.ServiceBaseUrl}/sites/website{Model.SiteNumber}/{slot.Name}/{slot.EntryFile}"
+                            : $"/portal/files/{Model.SiteNumber}/{slot.Name}";
+                        var liveTarget = slot.EntryFile != null ? "_blank" : "_self";
+                        var liveLabel = slot.EntryFile != null ? "View Live Page" : "Browse Files to View";
+                        <div class="d-flex gap-2 mb-2">
+                            <a href="@liveUrl" target="@liveTarget" class="btn btn-success btn-sm flex-fill">
+                                @liveLabel
+                            </a>
+                            <a href="/portal/files/@(Model.SiteNumber)/@(slot.Name)"
+                               class="btn btn-primary btn-sm flex-fill">
+                                Browse Files
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="card-text text-muted small mb-3">No content uploaded yet.</p>
+                    }
+
+                    <form id="@formId" asp-controller="Deploy" asp-action="Upload"
+                          asp-route-page="@slot.Name"
+                          method="post" enctype="multipart/form-data">
+                        <input type="hidden" name="siteOverride" value="@Model.SiteNumber" />
+
+                        <div id="@dropId" class="drop-zone mb-2" onclick="document.getElementById('@fileId').click()">
+                            <span class="drop-zone-text">Drag & drop <strong>@(slot.Name).zip</strong> here or click to browse</span>
+                            <input type="file" id="@fileId" name="file" class="d-none" accept=".zip"
+                                   onchange="handleFileSelect(this, '@dropId', '@formId')" />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                            @(slot.HasContent ? "Replace" : "Upload") ZIP
+                        </button>
+                    </form>
+
+                    @if (slot.HasContent)
+                    {
+                        <form asp-controller="Deploy" asp-action="Clear"
                               asp-route-page="@slot.Name"
-                              method="post" enctype="multipart/form-data">
-                            <input type="hidden" name="asurite" value="@Model.Asurite" />
+                              method="post" class="mt-2"
+                              onsubmit="return confirm('Are you sure you want to remove all files from @slot.Name?');">
                             <input type="hidden" name="siteOverride" value="@Model.SiteNumber" />
-
-                            <div id="@dropId" class="drop-zone mb-2" onclick="document.getElementById('@fileId').click()">
-                                <span class="drop-zone-text">Drag & drop <strong>@(slot.Name).zip</strong> here or click to browse</span>
-                                <input type="file" id="@fileId" name="file" class="d-none" accept=".zip"
-                                       onchange="handleFileSelect(this, '@dropId', '@formId')" />
-                            </div>
-
-                            <button type="submit" class="btn btn-primary btn-sm w-100">
-                                @(slot.HasContent ? "Replace" : "Upload") ZIP
+                            <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                                Remove Files
                             </button>
                         </form>
-
-                        @if (slot.HasContent)
-                        {
-                            <form asp-controller="Deploy" asp-action="Clear"
-                                  asp-route-page="@slot.Name"
-                                  method="post" class="mt-2"
-                                  onsubmit="return confirm('Are you sure you want to remove all files from @slot.Name?');">
-                                <input type="hidden" name="asurite" value="@Model.Asurite" />
-                                <input type="hidden" name="siteOverride" value="@Model.SiteNumber" />
-                                <button type="submit" class="btn btn-outline-danger btn-sm w-100">
-                                    Remove Files
-                                </button>
-                            </form>
-                        }
-                    </div>
+                    }
                 </div>
             </div>
-        }
-    </div>
-
-    <div class="card mb-4">
-        <div class="card-header">
-            <strong>Alternative: Upload via curl (Command Prompt / Terminal)</strong>
         </div>
-        <div class="card-body">
-            <p class="text-muted small">You can also deploy from the command line. Replace <code>PageX</code> with the target page (Page0&ndash;Page10) and provide the path to your ZIP file.</p>
-            <pre class="bg-dark text-light p-3 rounded"><code>curl -X POST "@(Model.ServiceBaseUrl)/portal/deploy/upload?page=Page0" ^
-     -F "asurite=@Model.Asurite" ^
-     -F "file=@@C:\path\to\your\Page0.zip"</code></pre>
-            <p class="text-muted small mb-0">On macOS/Linux, replace <code>^</code> with <code>\</code> for line continuation.</p>
-        </div>
-    </div>
-}
+    }
+</div>
 
 @section Scripts {
     <script>

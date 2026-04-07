@@ -1,13 +1,12 @@
 @model WebstrarPortal.Models.SiteOverview
 @{
     ViewData["Title"] = $"Site {Model.SiteNumber}";
-    var asurite = ViewBag.Asurite as string;
     var serviceBase = ViewBag.ServiceBaseUrl as string;
 }
 
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="/instructor?asurite=@asurite">All Sites</a></li>
+        <li class="breadcrumb-item"><a href="/instructor">All Sites</a></li>
         <li class="breadcrumb-item active">website@(Model.SiteNumber)</li>
     </ol>
 </nav>
@@ -100,14 +99,14 @@
                         @* Smart View Live Page link *@
                         var instrLiveUrl = slot.EntryFile != null
                             ? $"{serviceBase}/sites/website{Model.SiteNumber}/{slot.Name}/{slot.EntryFile}"
-                            : $"/instructor/site/{Model.SiteNumber}/page/{slot.Name}/files?asurite={asurite}";
+                            : $"/instructor/site/{Model.SiteNumber}/page/{slot.Name}/files";
                         var instrTarget = slot.EntryFile != null ? "_blank" : "_self";
                         var instrLabel = slot.EntryFile != null ? "View Live Page" : "Browse Files to View";
                         <div class="d-grid gap-2">
                             <a href="@instrLiveUrl" target="@instrTarget" class="btn btn-success btn-sm">
                                 @instrLabel
                             </a>
-                            <a href="/instructor/site/@(Model.SiteNumber)/page/@(slot.Name)/files?asurite=@asurite"
+                            <a href="/instructor/site/@(Model.SiteNumber)/page/@(slot.Name)/files"
                                class="btn btn-primary btn-sm">
                                 Browse Files
                             </a>

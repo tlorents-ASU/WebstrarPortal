@@ -1,7 +1,6 @@
 @model WebstrarPortal.Models.FileBrowserViewModel
 @{
     ViewData["Title"] = $"Files - {Model.PageName}";
-    var asurite = ViewBag.Asurite as string;
     var backUrl = ViewBag.BackUrl as string ?? "/portal";
 }
 
@@ -63,7 +62,6 @@ else
 @functions {
     void RenderTree(List<WebstrarPortal.Models.FileNode> nodes, int depth)
     {
-        var asurite = ViewBag.Asurite as string;
         foreach (var node in nodes)
         {
             var indent = depth * 20;
@@ -80,7 +78,7 @@ else
             }
             else
             {
-                var viewUrl = $"/portal/files/{Model.SiteNumber}/{Model.PageName}/view?path={Uri.EscapeDataString(node.RelativePath)}&asurite={asurite}";
+                var viewUrl = $"/portal/files/{Model.SiteNumber}/{Model.PageName}/view?path={Uri.EscapeDataString(node.RelativePath)}";
                 var sizeStr = FormatSize(node.Size);
                 <tr>
                     <td style="padding-left: @(indent + 12)px;">

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebstrarPortal.Models;
 using WebstrarPortal.Services;
@@ -5,6 +6,7 @@ using WebstrarPortal.Services;
 namespace WebstrarPortal.Controllers;
 
 [Route("instructor")]
+[Authorize]
 public class InstructorController : Controller
 {
     private readonly DynamoDbService _ddb;
@@ -26,20 +28,12 @@ public class InstructorController : Controller
     }
 
     [HttpGet("")]
-    public async Task<IActionResult> Index([FromQuery] string asurite)
+    public async Task<IActionResult> Index()
     {
-        if (string.IsNullOrWhiteSpace(asurite))
+        var asurite = User.Identity!.Name!;
+
+        if (!await VerifyInstructor(asurite))
             return RedirectToAction("Index", "Portal");
-
-        asurite = asurite.Trim().ToLowerInvariant();
-        var isTA = _taAsurites.Contains(asurite);
-
-        if (!isTA)
-        {
-            var site = await _ddb.GetSiteForAsuriteAsync(asurite);
-            if (site == null || !_instructorSites.Contains(site.Value))
-                return RedirectToAction("Index", "Portal");
-        }
 
         var allAssignments = await _ddb.GetAllSiteAssignmentsAsync();
         var serviceBase = _config["CAS:ServiceBaseUrl"]?.TrimEnd('/') ?? Request.Scheme + "://" + Request.Host;
@@ -71,8 +65,10 @@ public class InstructorController : Controller
     }
 
     [HttpGet("site/{siteNumber:int}")]
-    public async Task<IActionResult> Site(int siteNumber, [FromQuery] string asurite)
+    public async Task<IActionResult> Site(int siteNumber)
     {
+        var asurite = User.Identity!.Name!;
+
         if (!await VerifyInstructor(asurite))
             return RedirectToAction("Index", "Portal");
 
@@ -90,14 +86,15 @@ public class InstructorController : Controller
             Pages = _pageStatus.GetPageStatuses(siteNumber)
         };
 
-        ViewBag.Asurite = asurite;
         ViewBag.ServiceBaseUrl = serviceBase;
         return View("Site", model);
     }
 
     [HttpGet("site/{siteNumber:int}/page/{pageName}/files")]
-    public async Task<IActionResult> Files(int siteNumber, string pageName, [FromQuery] string asurite)
+    public async Task<IActionResult> Files(int siteNumber, string pageName)
     {
+        var asurite = User.Identity!.Name!;
+
         if (!await VerifyInstructor(asurite))
             return RedirectToAction("Index", "Portal");
 
@@ -120,19 +117,20 @@ public class InstructorController : Controller
             EntryFile = thisPage?.EntryFile
         };
 
-        ViewBag.Asurite = asurite;
         return View("Files", model);
     }
 
     [HttpGet("site/{siteNumber:int}/page/{pageName}/view")]
     public async Task<IActionResult> ViewFile(int siteNumber, string pageName,
-        [FromQuery] string path, [FromQuery] string asurite)
+        [FromQuery] string path)
     {
+        var asurite = User.Identity!.Name!;
+
         if (!await VerifyInstructor(asurite))
             return RedirectToAction("Index", "Portal");
 
         if (string.IsNullOrWhiteSpace(path))
-            return RedirectToAction("Files", new { siteNumber, pageName, asurite });
+            return RedirectToAction("Files", new { siteNumber, pageName });
 
         var content = _pageStatus.ReadFileContent(siteNumber, pageName, path);
         if (content == null)
@@ -148,17 +146,11 @@ public class InstructorController : Controller
             Language = PageStatusService.GetLanguageFromExtension(path)
         };
 
-        ViewBag.Asurite = asurite;
         return View("ViewFile", model);
     }
 
-    private async Task<bool> VerifyInstructor(string? asurite)
+    private async Task<bool> VerifyInstructor(string asurite)
     {
-        if (string.IsNullOrWhiteSpace(asurite))
-            return false;
-
-        asurite = asurite.Trim().ToLowerInvariant();
-
         if (_taAsurites.Contains(asurite))
             return true;
 
