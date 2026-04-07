@@ -9,4 +9,10 @@ public class HomeController : Controller
     {
         return Redirect("/portal");
     }
+
+    [HttpGet("/health")]
+    public IActionResult Health()
+    {
+        return Ok("healthy");
+    }
 }
