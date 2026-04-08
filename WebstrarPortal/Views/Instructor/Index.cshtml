@@ -20,8 +20,11 @@
 }
 else
 {
+    <div class="mb-3">
+        <input type="text" id="siteSearch" class="form-control" placeholder="Search by site number or ASURITE..." />
+    </div>
     <div class="table-responsive">
-        <table class="table table-hover align-middle">
+        <table class="table table-hover align-middle" id="sitesTable">
             <thead class="table-dark">
                 <tr>
                     <th>Site</th>
@@ -94,4 +97,21 @@ else
             </tbody>
         </table>
     </div>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var search = document.getElementById('siteSearch');
+            if (!search) return;
+            search.addEventListener('input', function () {
+                var term = this.value.toLowerCase();
+                var rows = document.querySelectorAll('#sitesTable tbody tr');
+                rows.forEach(function (row) {
+                    var text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(term) ? '' : 'none';
+                });
+            });
+        });
+    </script>
 }
