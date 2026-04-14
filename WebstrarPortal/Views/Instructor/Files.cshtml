@@ -35,11 +35,14 @@
     }
     else
     {
-        <div class="d-flex flex-wrap gap-2">
-            @foreach (var aspx in Model.AspxFiles)
-            {
-                <a href="@Model.SiteBaseUrl/@aspx" target="_blank" class="btn btn-success btn-sm">View @aspx</a>
-            }
+        <div>
+            <small class="text-muted d-block mb-1">Click to view live pages:</small>
+            <div class="d-flex flex-wrap gap-2">
+                @foreach (var aspx in Model.AspxFiles)
+                {
+                    <a href="@Model.SiteBaseUrl/@aspx" target="_blank" class="btn btn-success btn-sm">View @aspx</a>
+                }
+            </div>
         </div>
     }
 </div>

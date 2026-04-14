@@ -70,10 +70,6 @@
                             {
                                 <span class="text-success">&#10003; Default.aspx found</span>
                             }
-                            else if (slot.Index == 0)
-                            {
-                                <span class="text-danger">&#10007; Default.aspx missing (required)</span>
-                            }
                             else if (slot.AspxFiles.Count == 1)
                             {
                                 <span class="text-success">&#10003; Contains 1 .aspx entry point</span>
@@ -84,19 +80,13 @@
                             }
                             else
                             {
-                                <span style="color: #0d6efdf7;">No .aspx files</span>
+                                <span class="text-muted">@slot.FileCount file(s) uploaded</span>
                             }
                         </p>
                         @if (!slot.HasDefaultAspx && slot.AspxFiles.Count > 1)
                         {
                             <p class="card-text text-muted small mb-2">
                                 No Default.aspx &mdash; use direct links to each .aspx file
-                            </p>
-                        }
-                        else if (!slot.HasDefaultAspx && slot.AspxFiles.Count == 0 && slot.Index != 0 && slot.HasContent)
-                        {
-                            <p class="card-text text-muted small mb-2">
-                                No .aspx entry points found &mdash; visitors must link to specific files
                             </p>
                         }
 

@@ -31,7 +31,6 @@ else
                     <th>ASURITE(s)</th>
                     <th class="text-center">Pages with Content</th>
                     <th class="text-center">Total Files</th>
-                    <th class="text-center">Page0 Default.aspx</th>
                     <th>Last Activity</th>
                     <th></th>
                 </tr>
@@ -40,7 +39,6 @@ else
                 @foreach (var site in Model.Sites)
                 {
                     var pagesWithContent = site.Pages.Count(p => p.HasContent);
-                    var page0HasDefault = site.Pages.FirstOrDefault(p => p.Index == 0)?.HasDefaultAspx ?? false;
                     var hasActivity = site.TotalFiles > 0;
                     var rowClass = hasActivity ? "" : "table-light text-muted";
 
@@ -58,23 +56,6 @@ else
                             </span>
                         </td>
                         <td class="text-center">@site.TotalFiles</td>
-                        <td class="text-center">
-                            @if (pagesWithContent > 0)
-                            {
-                                if (page0HasDefault)
-                                {
-                                    <span class="text-success fw-bold">&#10003;</span>
-                                }
-                                else
-                                {
-                                    <span class="text-danger fw-bold">&#10007; Missing</span>
-                                }
-                            }
-                            else
-                            {
-                                <span class="text-muted">&mdash;</span>
-                            }
-                        </td>
                         <td>
                             @if (site.LastActivity.HasValue && site.LastActivity.Value != default)
                             {
