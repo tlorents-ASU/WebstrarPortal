@@ -37,12 +37,6 @@ public class PortalController : Controller
     {
         var asurite = User.Identity!.Name!;
 
-        // TAs go straight to instructor dashboard
-        if (_taAsurites.Contains(asurite))
-        {
-            return RedirectToAction("Index", "Instructor");
-        }
-
         // Multi-site users: show site picker or dashboard for selected site
         if (_multiSiteUsers.TryGetValue(asurite, out var sites))
         {
@@ -61,9 +55,24 @@ public class PortalController : Controller
                 return View("Index", model);
             }
 
+            // Check if this multi-site user is also an instructor or TA
+            var isInstructor = false;
+            var ddbSite = await _ddb.GetSiteForAsuriteAsync(asurite);
+            if (ddbSite.HasValue && _instructorSites.Contains(ddbSite.Value))
+                isInstructor = true;
+            if (_taAsurites.Contains(asurite))
+                isInstructor = true;
+
             ViewBag.Asurite = asurite;
             ViewBag.Sites = sites;
+            ViewBag.ShowInstructorDashboard = isInstructor;
             return View("SitePicker");
+        }
+
+        // TAs go straight to instructor dashboard
+        if (_taAsurites.Contains(asurite))
+        {
+            return RedirectToAction("Index", "Instructor");
         }
 
         var siteResult = await _ddb.GetSiteForAsuriteAsync(asurite);

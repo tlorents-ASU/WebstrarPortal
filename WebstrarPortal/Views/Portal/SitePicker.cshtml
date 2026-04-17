@@ -2,6 +2,7 @@
     ViewData["Title"] = "Select a Site";
     var asurite = ViewBag.Asurite as string;
     var sites = ViewBag.Sites as List<int>;
+    var showInstructor = ViewBag.ShowInstructorDashboard as bool? ?? false;
 }
 
 <div class="row justify-content-center mt-5">
@@ -13,9 +14,15 @@
                     Logged in as <strong>@asurite</strong> &mdash; you have access to multiple sites.
                 </p>
                 <div class="d-grid gap-3 mt-4">
+                    @if (showInstructor)
+                    {
+                        <a href="/instructor" class="btn btn-lg" style="background-color: #8C1D40; color: white;">
+                            Instructor Dashboard
+                        </a>
+                    }
                     @foreach (var siteNum in sites)
                     {
-                        <a href="/portal?site=@siteNum" class="btn btn-primary btn-lg">
+                        <a href="/portal?site=@siteNum" class="btn btn-lg" style="background-color: #FFC627; color: black;">
                             website@(siteNum)
                         </a>
                     }
