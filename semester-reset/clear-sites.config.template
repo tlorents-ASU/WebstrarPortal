@@ -1,0 +1,27 @@
+# Step 3 — TEMP one-shot: clear live files for sites 5-67 on the EC2 instance.
+# Empties C:\WebstrarDeploy\website{5..67}\Page{0..10} contents, KEEPS the folders
+# (IIS apps point to them). container_commands fires on EVERY deploy, so after this
+# runs once, DELETE this file and redeploy or it will wipe the new students too.
+files:
+  "c:\\ebscripts\\clear-sites.ps1":
+    content: |
+      $ErrorActionPreference = "Continue"
+      $root = "C:\WebstrarDeploy"
+      $log  = Join-Path $root "_reset_log.txt"
+      $cleared = 0
+      foreach ($w in 5..67) {
+        for ($p = 0; $p -le 10; $p++) {
+          $dir = Join-Path $root ("website{0}\Page{1}" -f $w, $p)
+          if (Test-Path $dir) {
+            Get-ChildItem -LiteralPath $dir -Recurse -Force -ErrorAction SilentlyContinue |
+              Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+            $cleared++
+          }
+        }
+      }
+      Add-Content -Path $log -Value ((Get-Date).ToString('s') + "  Cleared sites 5-67, dirs touched: $cleared")
+
+container_commands:
+  01_clear_old_sites:
+    command: powershell -ExecutionPolicy Bypass -NoProfile -File "c:\\ebscripts\\clear-sites.ps1"
+    waitAfterCompletion: 0
